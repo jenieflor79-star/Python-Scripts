@@ -1,0 +1,46 @@
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# 1. Set up the data to strictly match your Table 4.4 (LDA vs. BERTopic)
+models = ['Traditional LDA\n(Baseline Framework)', 'Advanced BERTopic\n(Proposed Architecture)']
+coherence_scores = [0.48, 0.52]  # The exact Cv scores from your Table 4.4
+
+# 2. Set style configurations for a formal academic manuscript
+sns.set_theme(style="whitegrid")
+plt.figure(figsize=(7.5, 6))
+
+# Custom color choices: Deep Academic Blue and Rich Dark Yellow
+colors = ['#1F497D', '#D4AF37']
+
+# 3. Create the bar plot
+barplot = sns.barplot(x=models, y=coherence_scores, palette=colors, edgecolor='#4B5563', linewidth=1.2, width=0.45)
+
+# 4. Add the exact numerical values on top of each bar for absolute data transparency
+for p in barplot.patches:
+    height = p.get_height()
+    barplot.annotate(f'Cv = {height:.2f}',
+                     (p.get_x() + p.get_width() / 2., height + 0.008),
+                     ha='center', va='center',
+                     xytext=(0, 0),
+                     textcoords='offset points',
+                     fontname='Calibri', size=11, weight='bold', color='#111827')
+
+# 5. Fine-tune axes, limits, and typography for a formal thesis presentation
+plt.ylim(0, 0.60)  # Adds clean headroom above the values
+plt.ylabel('Model Average Coherence Value (Cv Score)', fontname='Calibri', size=12, weight='bold', labelpad=12)
+plt.xlabel('Evaluated Topic Modeling Framework Architectures', fontname='Calibri', size=12, weight='bold', labelpad=12)
+plt.xticks(fontname='Calibri', size=11, weight='bold')
+plt.yticks(fontname='Calibri', size=10)
+
+# Remove unnecessary border lines (spines) to keep the look minimal and modern
+sns.despine(left=True, bottom=False)
+
+# Optimize spacing layout automatically
+plt.tight_layout()
+
+# 6. Save the final figure as a high-resolution crisp image file for Microsoft Word
+output_filename = "Topic Modeling barchart Final na to2.png"
+plt.savefig(output_filename, dpi=300, bbox_inches='tight')
+plt.close()
+
+print(f"📊 Clean, formal comparison bar chart successfully saved as '{output_filename}'!")
