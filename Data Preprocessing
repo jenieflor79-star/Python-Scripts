@@ -1,0 +1,80 @@
+import pandas as pd
+import spacy
+import re
+
+# 1. LOAD THE MODEL
+# Run this in your terminal if you haven't: python -m spacy download en_core_web_sm
+try:
+    nlp = spacy.load("en_core_web_sm")
+except OSError:
+    import os
+
+    os.system("python -m spacy download en_core_web_sm")
+    nlp = spacy.load("en_core_web_sm")
+
+# 2. DEFINE CUSTOM STOPWORDS (Specific to BARMM News 2021-2025)
+# These words are so common in your dataset they will "blur" your topics
+barmm_stopwords = {"barmm", "bangsamoro", "region", "news", "headline", "official", "government", "philippines"}
+
+
+def refine_text(text):
+    if not isinstance(text, str):
+        return "", ""
+
+    # Basic cleaning
+    text = text.lower().strip()
+    # Remove numbers (years like 2021-2025) and special characters
+    text = re.sub(r'[^a-zA-Z\s]', '', text)
+
+    doc = nlp(text)
+
+    # --- PATH A: TOPIC MODELING REFINEMENT ---
+    # We keep only Nouns/Proper Nouns and Lemmatize them
+    topic_tokens = [
+        token.lemma_ for token in doc
+        if token.pos_ in ["NOUN", "PROPN"]
+           and not token.is_stop
+           and token.text not in barmm_stopwords
+           and len(token.text) > 2
+    ]
+
+    # --- PATH B: SENTIMENT ANALYSIS REFINEMENT ---
+    # We keep adjectives, verbs, and "negation" words (not, no)
+    sentiment_tokens = [
+        token.text for token in doc
+        if (not token.is_stop or token.dep_ == "neg")
+           and not token.is_punct
+    ]
+
+    return " ".join(topic_tokens), " ".join(sentiment_tokens)
+
+
+# 3. LOADING AND PROCESSING
+def main():
+
+    # If using Excel, use: pd.read_excel('filename.xlsx')
+    input_file = 'PNA.csv'
+
+    print(f"--- Loading {input_file} ---")
+    df = pd.read_csv(input_file)
+
+    text_column = 'headlines'
+
+    print("--- Refining dataset for NLP tasks... ---")
+
+    # Applying the function to create two new columns
+    refinement_results = df[text_column].apply(lambda x: pd.Series(refine_text(x)))
+    df['text_for_topics'] = refinement_results[0]
+    df['text_for_sentiment'] = refinement_results[1]
+
+    # 4. SAVE THE REFINED DATASET
+    output_file = 'Cleaned_dataset.csv'
+    df.to_csv(output_file, index=False)
+
+    print(f"--- Success! Saved refined data to: {output_file} ---")
+    print("\nPreview of Refined Data:")
+    print(df[[text_column, 'text_for_topics', 'text_for_sentiment']].head())
+
+
+if __name__ == "__main__":
+    main()
